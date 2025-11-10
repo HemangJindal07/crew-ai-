@@ -41,7 +41,8 @@ jobs:
         NEWS_TOPIC: "latest AI developments"
       run: |
         source .venv/bin/activate
-        crewai run
+        mkdir -p output
+        crewai run > output/news_report.txt
 
     - name: 📤 Upload results
       uses: actions/upload-artifact@v4
