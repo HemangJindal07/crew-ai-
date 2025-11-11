@@ -9,6 +9,58 @@ on:
   schedule:
     - cron: '0 9 * * *'  # Daily at 9 AM UTC
 
+# jobs:
+#   run-crew:
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 15
+    
+#     steps:
+#     - name: 📥 Checkout code
+#       uses: actions/checkout@v4
+
+#     - name: 🐍 Set up Python
+#       uses: actions/setup-python@v5
+#       with:
+#         python-version: '3.11'
+
+#     - name: 📦 Install uv
+#       run: |
+#         curl -LsSf https://astral.sh/uv/install.sh | sh
+#         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+#     - name: 🔧 Install dependencies
+#       run: |
+#         uv venv
+#         source .venv/bin/activate
+#         uv pip install -e .
+
+#     - name: 🤖 Run CrewAI
+#       env:
+#         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+#         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+#         NEWS_TOPIC: "latest AI developments"
+#       run: |
+#         source .venv/bin/activate
+#         mkdir -p output
+#         crewai run > output/news_report.txt
+
+#     - name: 📤 Upload results
+#       uses: actions/upload-artifact@v4
+#       if: always()
+#       with:
+#         name: news-report-${{ github.run_number }}
+#         path: output/
+#         retention-days: 30
+
+#     - name: 📊 Summary
+#       if: always()
+#       run: |
+#         echo "## 🎉 CrewAI Pipeline Results" >> $GITHUB_STEP_SUMMARY
+#         echo "" >> $GITHUB_STEP_SUMMARY
+#         echo "✅ Pipeline completed!" >> $GITHUB_STEP_SUMMARY
+#         echo "📁 Check artifacts for the generated report" >> $GITHUB_STEP_SUMMARY
+
+
 jobs:
   run-crew:
     runs-on: ubuntu-latest
@@ -23,6 +75,14 @@ jobs:
       with:
         python-version: '3.11'
 
+    - name: 💾 Cache uv virtualenv
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-
+
     - name: 📦 Install uv
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -30,7 +90,9 @@ jobs:
 
     - name: 🔧 Install dependencies
       run: |
-        uv venv
+        if [ ! -d ".venv" ]; then
+          uv venv
+        fi
         source .venv/bin/activate
         uv pip install -e .
 
@@ -40,9 +102,11 @@ jobs:
         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
         NEWS_TOPIC: "latest AI developments"
       run: |
+        echo "Start time: $(date)"
         source .venv/bin/activate
         mkdir -p output
-        crewai run > output/news_report.txt
+        PYTHONUNBUFFERED=1 crewai run > output/news_report.txt 2>&1
+        echo "End time: $(date)"
 
     - name: 📤 Upload results
       uses: actions/upload-artifact@v4
@@ -51,11 +115,3 @@ jobs:
         name: news-report-${{ github.run_number }}
         path: output/
         retention-days: 30
-
-    - name: 📊 Summary
-      if: always()
-      run: |
-        echo "## 🎉 CrewAI Pipeline Results" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Pipeline completed!" >> $GITHUB_STEP_SUMMARY
-        echo "📁 Check artifacts for the generated report" >> $GITHUB_STEP_SUMMARY
