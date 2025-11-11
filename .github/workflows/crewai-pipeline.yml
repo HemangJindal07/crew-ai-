@@ -64,7 +64,7 @@ on:
 jobs:
   run-crew:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     
     steps:
     - name: 📥 Checkout code
