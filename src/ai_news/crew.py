@@ -22,7 +22,7 @@ class AiNews:
     
     # ✅ Option 2: Use Gemini (requires: uv add google-generativeai)
     llm = LLM(
-        model="gemini/gemini-2.5-flash",
+        model="gemini/gemini-2.5-flash-lite",
         api_key=os.getenv("GEMINI_API_KEY"),
         temperature=0.7
     )
