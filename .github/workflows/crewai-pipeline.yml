@@ -61,19 +61,84 @@ on:
 #         echo "📁 Check artifacts for the generated report" >> $GITHUB_STEP_SUMMARY
 
 
+
+
+
+# jobs:
+#   run-crew:
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 45          # Virtual machine environment
+    
+#     steps:
+#     - name: 📥 Checkout code
+#       uses: actions/checkout@v4        # clone your repository’s code into the virtual machine that the workflow runs on.
+
+#     - name: 🐍 Set up Python
+#       uses: actions/setup-python@v5
+#       with:
+#         python-version: '3.11'
+
+#     - name: 💾 Cache uv virtualenv
+#       uses: actions/cache@v4
+#       with:
+#         path: .venv
+#         key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+#         restore-keys: |
+#           ${{ runner.os }}-uv-
+
+#     - name: 📦 Install uv
+#       run: |
+#         curl -LsSf https://astral.sh/uv/install.sh | sh
+#         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+#     - name: 🔧 Install dependencies
+#       run: |
+#         if [ ! -d ".venv" ]; then
+#           uv venv
+#         fi
+#         source .venv/bin/activate
+#         uv pip install -e .
+
+#     - name: 🤖 Run CrewAI
+#       env:
+#         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+#         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+#         NEWS_TOPIC: "latest AI developments"
+#       run: |
+#         echo "Start time: $(date)"
+#         source .venv/bin/activate
+#         mkdir -p output
+#         PYTHONUNBUFFERED=1 crewai run > output/news_report.txt 2>&1
+#         echo "End time: $(date)"
+
+#     - name: 📤 Upload results
+#       uses: actions/upload-artifact@v4
+#       if: always()
+#       with:
+#         name: news-report-${{ github.run_number }}
+#         path: output/
+#         retention-days: 30
+
+
+
+
+env:
+  PYTHON_VERSION: '3.11'
+  TIMEOUT_MINUTES: 45
+
 jobs:
-  run-crew:
+  generate-news-report:
     runs-on: ubuntu-latest
-    timeout-minutes: 45          # Virtual machine environment
+    timeout-minutes: ${{ env.TIMEOUT_MINUTES }}
     
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v4        # clone your repository’s code into the virtual machine that the workflow runs on.
+      uses: actions/checkout@v4
 
-    - name: 🐍 Set up Python
+    - name: 🐍 Set up Python ${{ env.PYTHON_VERSION }}
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: ${{ env.PYTHON_VERSION }}
 
     - name: 💾 Cache uv virtualenv
       uses: actions/cache@v4
@@ -83,42 +148,60 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-uv-
 
-    - name: 📦 Install uv
+    - name: 📦 Install uv package manager
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-    - name: 🔧 Install dependencies
+    - name: 🔧 Install project dependencies
       run: |
+        source $HOME/.cargo/env || true
         if [ ! -d ".venv" ]; then
           uv venv
         fi
         source .venv/bin/activate
         uv pip install -e .
 
-    - name: 🤖 Run CrewAI
+    - name: 🤖 Execute CrewAI pipeline
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
         NEWS_TOPIC: "latest AI developments"
       run: |
-        echo "Start time: $(date)"
         source .venv/bin/activate
         mkdir -p output
-        PYTHONUNBUFFERED=1 crewai run --topic "$NEWS_TOPIC" --output news/latest_news.md
-        echo "End time: $(date)"
+        python -c "from crewai import Crew; crew = Crew(...); crew.kickoff()" > /dev/null 2>&1
+        
+        # Verify markdown file was generated
+        if [ ! -f "ai_news_report.md" ]; then
+          echo "Error: ai_news_report.md not generated"
+          exit 1
+        fi
+        
+        mv ai_news_report.md output/ai_news_report.md
+        echo "✓ News report generated successfully"
 
-    # - name: 📤 Upload results
-    #   uses: actions/upload-artifact@v4
-    #   if: always()
-    #   with:
-    #     name: news-report-${{ github.run_number }}
-    #     path: output/
-    #     retention-days: 30
-    - name: 📤 Upload Markdown results
+    - name: 📊 Verify artifact content
+      run: |
+        if [ -f "output/ai_news_report.md" ]; then
+          echo "📄 Report size: $(wc -c < output/ai_news_report.md) bytes"
+          echo "📋 First 10 lines:"
+          head -10 output/ai_news_report.md
+        fi
+
+    - name: 📤 Upload markdown artifact
       uses: actions/upload-artifact@v4
-      if: always()
+      if: success()
       with:
-        name: news-report-${{ github.run_number }}
-        path: news/*.md
+        name: ai-news-report-${{ github.run_number }}
+        path: output/ai_news_report.md
         retention-days: 30
+        if-no-files-found: error
+
+    - name: ❌ Upload logs on failure
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: pipeline-logs-${{ github.run_number }}
+        path: output/
+        retention-days: 7
