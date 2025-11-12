@@ -48,35 +48,22 @@ jobs:
 
 
     - name: 🤖 Run CrewAI
-  env:
-    GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-    SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
-    NEWS_TOPIC: "latest AI developments"
-  run: |
-    set -e
-    echo "Start time: $(date)"
-    ls -la
-    ls -la .venv || echo "❌ No .venv found!"
-    source .venv/bin/activate
-    which python
-    which crewai || echo "❌ CrewAI not installed!"
-    mkdir -p output
-    echo "Running CrewAI..."
-    # Change to your project directory if needed
-    cd /path/to/your/crewai/project
-    # Run CrewAI with proper log and output separation
-    PYTHONUNBUFFERED=1 crewai run > >(tee /path/to/your/project/output/news_report.md) 2> >(tee /path/to/your/project/output/logs.txt >&2) || echo "❌ crewai run failed!"
-    echo "End time: $(date)"
-    echo ""
-    echo "--- Logs Stored ---"
-    if [ -f /path/to/your/project/output/logs.txt ]; then
-      wc -l /path/to/your/project/output/logs.txt
-    fi
-    echo ""
-    echo "--- Output Stored ---"
-    if [ -f /path/to/your/project/output/news_report.md ]; then
-      wc -l /path/to/your/project/output/news_report.md
-    fi
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+        NEWS_TOPIC: "latest AI developments"
+      run: |
+        set -e  # stop on first error
+        echo "Start time: $(date)"
+        ls -la
+        ls -la .venv || echo "❌ No .venv found!"
+        source .venv/bin/activate
+        which python
+        which crewai || echo "❌ CrewAI not installed!"
+        mkdir -p output
+        echo "Running CrewAI..."
+        PYTHONUNBUFFERED=1 crewai run > output/news_report.md 2> output/logs.txt || echo "❌ crewai run failed!"
+        echo "End time: $(date)"
 
 
 
