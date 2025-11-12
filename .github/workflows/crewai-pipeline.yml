@@ -113,7 +113,7 @@ jobs:
         which crewai || echo "❌ CrewAI not installed!"
         mkdir -p output
         echo "Running CrewAI..."
-        PYTHONUNBUFFERED=1 python main.py > output/logs.txt 2>&1
+        PYTHONUNBUFFERED=1 crewai run > output/news_report.md 2> output/logs.txt || echo "❌ crewai run failed!"
         echo "End time: $(date)"
 
 

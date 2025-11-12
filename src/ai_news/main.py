@@ -51,19 +51,4 @@ def run():
     AiNews().crew().kickoff(inputs=inputs)
 if __name__ == "__main__":
     # code to run when the file is executed directly
-    crew = AiNews()
-    result = crew.run()
-    
-    # Save clean output to Markdown
-    with open("output/news_report.md", "w", encoding="utf-8") as f:
-        f.write(result)
-
-    print("✅ CrewAI run complete. Report generated at output/news_report.md") 
-    crew = AiNews()
-    result = crew.run()
-    
-    # Save clean output to Markdown
-    with open("output/news_report.md", "w", encoding="utf-8") as f:
-        f.write(result)
-
-    print("✅ CrewAI run complete. Report generated at output/news_report.md")
+    run()
