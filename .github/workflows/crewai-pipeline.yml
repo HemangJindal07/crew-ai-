@@ -143,41 +143,38 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: 💾 Cache uv virtualenv
+    - name: 💾 Cache pip packages
       uses: actions/cache@v4
       with:
-        path: .venv
-        key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/pyproject.toml') }}
         restore-keys: |
-          ${{ runner.os }}-uv-
+          ${{ runner.os }}-pip-
 
-    - name: 📦 Install uv package manager
+    - name: 📦 Install dependencies
+      shell: bash
       run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-    - name: 🔧 Install project dependencies
-      run: |
-        source $HOME/.cargo/env || true
-        if [ ! -d ".venv" ]; then
-          uv venv
-        fi
-        source .venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install uv
+        uv venv .venv
+        . .venv/bin/activate
         uv pip install -e .
 
     - name: 🤖 Execute CrewAI pipeline
+      shell: bash
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
         NEWS_TOPIC: "latest AI developments"
+        VIRTUAL_ENV: .venv
+        PATH: .venv/bin:$PATH
       run: |
-        source .venv/bin/activate
         mkdir -p output
-        python -c "from crewai import Crew; crew = Crew(...); crew.kickoff()" > /dev/null 2>&1
+        python -m crewai run 2>/dev/null || python main.py 2>/dev/null
         
         # Verify markdown file was generated
         if [ ! -f "ai_news_report.md" ]; then
-          echo "Error: ai_news_report.md not generated"
+          echo "❌ Error: ai_news_report.md not generated"
           exit 1
         fi
         
@@ -185,11 +182,13 @@ jobs:
         echo "✓ News report generated successfully"
 
     - name: 📊 Verify artifact content
+      if: success()
+      shell: bash
       run: |
         if [ -f "output/ai_news_report.md" ]; then
           echo "📄 Report size: $(wc -c < output/ai_news_report.md) bytes"
-          echo "📋 First 10 lines:"
-          head -10 output/ai_news_report.md
+          echo "📋 Preview:"
+          head -20 output/ai_news_report.md
         fi
 
     - name: 📤 Upload markdown artifact
