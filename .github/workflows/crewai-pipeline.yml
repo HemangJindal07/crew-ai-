@@ -1,13 +1,13 @@
-# name: CrewAI News Pipeline
+name: CrewAI News Pipeline
 
-# on:
-#   push:
-#     branches: [ main ]
-#   pull_request:
-#     branches: [ main ]
-#   workflow_dispatch:
-#   schedule:
-#     - cron: '0 9 * * *'  # Daily at 9 AM UTC
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * *'  # Daily at 9 AM UTC
 
 # # jobs:
 # #   run-crew:
@@ -61,149 +61,57 @@
 # #         echo "📁 Check artifacts for the generated report" >> $GITHUB_STEP_SUMMARY
 
 
-# jobs:
-#   run-crew:
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 45          # Virtual machine environment
-    
-#     steps:
-#     - name: 📥 Checkout code
-#       uses: actions/checkout@v4        # clone your repository’s code into the virtual machine that the workflow runs on.
-
-#     - name: 🐍 Set up Python
-#       uses: actions/setup-python@v5
-#       with:
-#         python-version: '3.11'
-
-#     - name: 💾 Cache uv virtualenv
-#       uses: actions/cache@v4
-#       with:
-#         path: .venv
-#         key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
-#         restore-keys: |
-#           ${{ runner.os }}-uv-
-
-#     - name: 📦 Install uv
-#       run: |
-#         curl -LsSf https://astral.sh/uv/install.sh | sh
-#         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-#     - name: 🔧 Install dependencies
-#       run: |
-#         if [ ! -d ".venv" ]; then
-#           uv venv
-#         fi
-#         source .venv/bin/activate
-#         uv pip install -e .
-
-#     - name: 🤖 Run CrewAI
-#       env:
-#         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-#         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
-#         NEWS_TOPIC: "latest AI developments"
-#       run: |
-#         echo "Start time: $(date)"
-#         source .venv/bin/activate
-#         mkdir -p output
-#         PYTHONUNBUFFERED=1 crewai run > output/news_report.txt 2>&1
-#         echo "End time: $(date)"
-
-#     - name: 📤 Upload results
-#       uses: actions/upload-artifact@v4
-#       if: always()
-#       with:
-#         name: news-report-${{ github.run_number }}
-#         path: output/
-#         retention-days: 30
-
-
-
-name: CrewAI News Pipeline
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-  schedule:
-    - cron: '0 9 * * *'  # Daily at 9 AM UTC
-
 jobs:
-  generate-news-report:
+  run-crew:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 45          # Virtual machine environment
     
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4        # clone your repository’s code into the virtual machine that the workflow runs on.
 
-    - name: 🐍 Set up Python 3.11
+    - name: 🐍 Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
 
-    - name: 💾 Cache pip packages
+    - name: 💾 Cache uv virtualenv
       uses: actions/cache@v4
       with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/pyproject.toml') }}
+        path: .venv
+        key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
-          ${{ runner.os }}-pip-
+          ${{ runner.os }}-uv-
 
-    - name: 📦 Install dependencies
-      shell: bash
+    - name: 📦 Install uv
       run: |
-        python -m pip install --upgrade pip
-        pip install uv
-        uv venv .venv
-        . .venv/bin/activate
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: 🔧 Install dependencies
+      run: |
+        if [ ! -d ".venv" ]; then
+          uv venv
+        fi
+        source .venv/bin/activate
         uv pip install -e .
 
-    - name: 🤖 Execute CrewAI pipeline
-      shell: bash
+    - name: 🤖 Run CrewAI
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
         NEWS_TOPIC: "latest AI developments"
-        VIRTUAL_ENV: .venv
-        PATH: .venv/bin:$PATH
       run: |
+        echo "Start time: $(date)"
+        source .venv/bin/activate
         mkdir -p output
-        python -m crewai run 2>/dev/null || python main.py 2>/dev/null
-        
-        # Verify markdown file was generated
-        if [ ! -f "ai_news_report.md" ]; then
-          echo "❌ Error: ai_news_report.md not generated"
-          exit 1
-        fi
-        
-        mv ai_news_report.md output/ai_news_report.md
-        echo "✓ News report generated successfully"
+        PYTHONUNBUFFERED=1 crewai run > output/news_report.txt 2>&1
+        echo "End time: $(date)"
 
-    - name: 📊 Verify artifact content
-      if: success()
-      shell: bash
-      run: |
-        if [ -f "output/ai_news_report.md" ]; then
-          echo "📄 Report size: $(wc -c < output/ai_news_report.md) bytes"
-          echo "📋 Preview:"
-          head -20 output/ai_news_report.md
-        fi
-
-    - name: 📤 Upload markdown artifact
+    - name: 📤 Upload results
       uses: actions/upload-artifact@v4
-      if: success()
+      if: always()
       with:
-        name: ai-news-report-${{ github.run_number }}
-        path: output/ai_news_report.md
-        retention-days: 30
-        if-no-files-found: error
-
-    - name: ❌ Upload logs on failure
-      uses: actions/upload-artifact@v4
-      if: failure()
-      with:
-        name: pipeline-logs-${{ github.run_number }}
+        name: news-report-${{ github.run_number }}
         path: output/
-        retention-days: 7
+        retention-days: 30
