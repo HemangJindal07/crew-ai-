@@ -96,17 +96,27 @@ jobs:
         source .venv/bin/activate
         uv pip install -e .
 
+
+
     - name: 🤖 Run CrewAI
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
         NEWS_TOPIC: "latest AI developments"
       run: |
+        set -e  # stop on first error
         echo "Start time: $(date)"
+        ls -la
+        ls -la .venv || echo "❌ No .venv found!"
         source .venv/bin/activate
+        which python
+        which crewai || echo "❌ CrewAI not installed!"
         mkdir -p output
-        PYTHONUNBUFFERED=1 crewai run > output/news_report.md
+        echo "Running CrewAI..."
+        PYTHONUNBUFFERED=1 crewai run > output/news_report.md 2> output/logs.txt || echo "❌ crewai run failed!"
         echo "End time: $(date)"
+
+
 
     - name: 📤 Upload results
       uses: actions/upload-artifact@v4
