@@ -1,67 +1,64 @@
-name: CrewAI News Pipeline
+# name: CrewAI News Pipeline
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-  schedule:
-    - cron: '0 9 * * *'  # Daily at 9 AM UTC
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+#   workflow_dispatch:
+#   schedule:
+#     - cron: '0 9 * * *'  # Daily at 9 AM UTC
 
-# jobs:
-#   run-crew:
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 15
+# # jobs:
+# #   run-crew:
+# #     runs-on: ubuntu-latest
+# #     timeout-minutes: 15
     
-#     steps:
-#     - name: 📥 Checkout code
-#       uses: actions/checkout@v4
+# #     steps:
+# #     - name: 📥 Checkout code
+# #       uses: actions/checkout@v4
 
-#     - name: 🐍 Set up Python
-#       uses: actions/setup-python@v5
-#       with:
-#         python-version: '3.11'
+# #     - name: 🐍 Set up Python
+# #       uses: actions/setup-python@v5
+# #       with:
+# #         python-version: '3.11'
 
-#     - name: 📦 Install uv
-#       run: |
-#         curl -LsSf https://astral.sh/uv/install.sh | sh
-#         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+# #     - name: 📦 Install uv
+# #       run: |
+# #         curl -LsSf https://astral.sh/uv/install.sh | sh
+# #         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-#     - name: 🔧 Install dependencies
-#       run: |
-#         uv venv
-#         source .venv/bin/activate
-#         uv pip install -e .
+# #     - name: 🔧 Install dependencies
+# #       run: |
+# #         uv venv
+# #         source .venv/bin/activate
+# #         uv pip install -e .
 
-#     - name: 🤖 Run CrewAI
-#       env:
-#         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-#         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
-#         NEWS_TOPIC: "latest AI developments"
-#       run: |
-#         source .venv/bin/activate
-#         mkdir -p output
-#         crewai run > output/news_report.txt
+# #     - name: 🤖 Run CrewAI
+# #       env:
+# #         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+# #         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+# #         NEWS_TOPIC: "latest AI developments"
+# #       run: |
+# #         source .venv/bin/activate
+# #         mkdir -p output
+# #         crewai run > output/news_report.txt
 
-#     - name: 📤 Upload results
-#       uses: actions/upload-artifact@v4
-#       if: always()
-#       with:
-#         name: news-report-${{ github.run_number }}
-#         path: output/
-#         retention-days: 30
+# #     - name: 📤 Upload results
+# #       uses: actions/upload-artifact@v4
+# #       if: always()
+# #       with:
+# #         name: news-report-${{ github.run_number }}
+# #         path: output/
+# #         retention-days: 30
 
-#     - name: 📊 Summary
-#       if: always()
-#       run: |
-#         echo "## 🎉 CrewAI Pipeline Results" >> $GITHUB_STEP_SUMMARY
-#         echo "" >> $GITHUB_STEP_SUMMARY
-#         echo "✅ Pipeline completed!" >> $GITHUB_STEP_SUMMARY
-#         echo "📁 Check artifacts for the generated report" >> $GITHUB_STEP_SUMMARY
-
-
-
+# #     - name: 📊 Summary
+# #       if: always()
+# #       run: |
+# #         echo "## 🎉 CrewAI Pipeline Results" >> $GITHUB_STEP_SUMMARY
+# #         echo "" >> $GITHUB_STEP_SUMMARY
+# #         echo "✅ Pipeline completed!" >> $GITHUB_STEP_SUMMARY
+# #         echo "📁 Check artifacts for the generated report" >> $GITHUB_STEP_SUMMARY
 
 
 # jobs:
@@ -121,24 +118,30 @@ on:
 
 
 
+name: CrewAI News Pipeline
 
-env:
-  PYTHON_VERSION: '3.11'
-  TIMEOUT_MINUTES: 45
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * *'  # Daily at 9 AM UTC
 
 jobs:
   generate-news-report:
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ env.TIMEOUT_MINUTES }}
+    timeout-minutes: 45
     
     steps:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
 
-    - name: 🐍 Set up Python ${{ env.PYTHON_VERSION }}
+    - name: 🐍 Set up Python 3.11
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version: '3.11'
 
     - name: 💾 Cache uv virtualenv
       uses: actions/cache@v4
