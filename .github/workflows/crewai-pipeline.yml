@@ -64,11 +64,11 @@ on:
 jobs:
   run-crew:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 45          # Virtual machine environment
     
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4        # clone your repository’s code into the virtual machine that the workflow runs on.
 
     - name: 🐍 Set up Python
       uses: actions/setup-python@v5
@@ -105,13 +105,20 @@ jobs:
         echo "Start time: $(date)"
         source .venv/bin/activate
         mkdir -p output
-        PYTHONUNBUFFERED=1 crewai run > output/news_report.txt 2>&1
+        PYTHONUNBUFFERED=1 crewai run --topic "$NEWS_TOPIC" --output news/latest_news.md
         echo "End time: $(date)"
 
-    - name: 📤 Upload results
+    # - name: 📤 Upload results
+    #   uses: actions/upload-artifact@v4
+    #   if: always()
+    #   with:
+    #     name: news-report-${{ github.run_number }}
+    #     path: output/
+    #     retention-days: 30
+    - name: 📤 Upload Markdown results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: news-report-${{ github.run_number }}
-        path: output/
+        path: news/*.md
         retention-days: 30

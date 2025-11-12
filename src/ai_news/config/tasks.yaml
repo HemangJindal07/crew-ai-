@@ -9,22 +9,23 @@ retrieve_news_task:
 
 website_scraper_task:
   description: >
-    Scrape the website for the latest news and information
+    Scrape the website for the latest news and information.
   expected_output: >
     Fully scraped websites with all the important information from the website.
   agent: website_scraper
 
 ai_news_writer_task:
   description: >
-    Summarize the information from the websites into a fully fledge news article in markdown format.
+    Summarize the information from the websites into a full markdown news article.
   expected_output: >
-    A fully fledge news article with the main topics, each with a full section of information.
-    Formatted as markdown without '```'
+    A markdown-formatted article summarizing all relevant news, without code fences (no ```).
   agent: ai_news_writer
 
 file_writer_task:
   description: >
-    Write the news article to a file
+    Save the generated news article into a markdown file.
   expected_output: >
-    A fully fledge news article with all information from previous task into a file named news/{date}_news_article.md
+    A saved markdown file containing the AI-generated news article.
   agent: file_writer
+  params:
+    output_file: "ai_news_report.md"
