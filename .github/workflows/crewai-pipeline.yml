@@ -105,7 +105,7 @@ jobs:
         echo "Start time: $(date)"
         source .venv/bin/activate
         mkdir -p output
-        PYTHONUNBUFFERED=1 crewai run > output/news_report.txt 2>&1
+        PYTHONUNBUFFERED=1 crewai run --output output/news_report.md > output/logs.txt 2>&1
         echo "End time: $(date)"
 
     - name: 📤 Upload results
