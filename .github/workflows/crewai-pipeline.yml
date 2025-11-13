@@ -147,7 +147,7 @@ jobs:
         New-Item -ItemType Directory -Force -Path output | Out-Null
         Write-Host "Running CrewAI..."
         try {
-          crewai run | Tee-Object -FilePath "output/news_report.md" 2> "output/logs.txt"
+          crewai run | Tee-Object -FilePath "output/news_report.md" 
         } catch {
           Write-Host "❌ crewai run failed!"
         }
