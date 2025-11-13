@@ -127,7 +127,7 @@ jobs:
         Write-Host "✅ Dependencies installed."
 
     - name: 🤖 Run CrewAI
-      shell: pwsh
+      shell: powershell
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
