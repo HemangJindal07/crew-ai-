@@ -12,7 +12,7 @@
 
 # jobs:
 #   run-crew:
-#     runs-on: self-hosted
+#     runs-on: ubuntu-latest
 #     timeout-minutes: 45          # Virtual machine environment
     
 #     steps:
@@ -34,7 +34,7 @@
 
 #     - name: 📦 Install uv
 #       run: |
-#         irm https://astral.sh/uv/install.ps1 | iex
+#         curl -LsSf https://astral.sh/uv/install.sh | sh
 #         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
 #     - name: 🔧 Install dependencies
@@ -75,6 +75,7 @@
 #         path: output/
 #         retention-days: 30
 
+
 name: CrewAI News Pipeline
 
 on:
@@ -82,7 +83,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch:    # Manual trigger via GitHub UI
   schedule:
     - cron: '0 9 * * *'  # Daily at 9 AM UTC
 
@@ -126,7 +127,7 @@ jobs:
         Write-Host "✅ Dependencies installed."
 
     - name: 🤖 Run CrewAI
-      shell: powershell
+      shell: pwsh
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
@@ -146,13 +147,20 @@ jobs:
 
         New-Item -ItemType Directory -Force -Path output | Out-Null
         Write-Host "Running CrewAI..."
+
         try {
-          crewai run | Tee-Object -FilePath "output/news_report.md" 
-        } catch {
+          # Stream output live to console AND save logs locally
+          crewai run 2>&1 | Tee-Object -FilePath "output/logs.txt"
+
+          # Optional: also save Markdown report separately if CrewAI writes to stdout
+          # crewai run 2>&1 | Tee-Object -FilePath "output/news_report.md"
+        }
+        catch {
           Write-Host "❌ crewai run failed!"
         }
 
         Write-Host "End time: $(Get-Date)"
+
 
     - name: 📤 Upload results
       uses: actions/upload-artifact@v4
