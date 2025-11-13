@@ -1,0 +1,11 @@
+﻿{
+  "agentId": 21,
+  "agentName": "TXCHD-PC-015",
+  "poolId": 1,
+  "poolName": "Default",
+  "serverUrl": "https://pipelinesghubeus7.actions.githubusercontent.com/cNmCEhTZXBL3swuE0yKxdNy3zIZkQCUgj6WU3g8pf95EOJ0ywJ/",
+  "gitHubUrl": "https://github.com/HemangJindal07/crew-ai-",
+  "workFolder": "_work",
+  "useV2Flow": true,
+  "serverUrlV2": "https://broker.actions.githubusercontent.com/"
+}
