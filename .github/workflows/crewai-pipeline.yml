@@ -1,3 +1,80 @@
+# name: CrewAI News Pipeline
+
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+#   workflow_dispatch:
+#   schedule:
+#     - cron: '0 9 * * *'  # Daily at 9 AM UTC
+
+
+# jobs:
+#   run-crew:
+#     runs-on: self-hosted
+#     timeout-minutes: 45          # Virtual machine environment
+    
+#     steps:
+#     - name: 📥 Checkout code
+#       uses: actions/checkout@v4        # clone your repository’s code into the virtual machine that the workflow runs on.
+
+#     - name: 🐍 Set up Python
+#       uses: actions/setup-python@v5
+#       with:
+#         python-version: '3.11'
+
+#     - name: 💾 Cache uv virtualenv
+#       uses: actions/cache@v4
+#       with:
+#         path: .venv
+#         key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+#         restore-keys: |
+#           ${{ runner.os }}-uv-
+
+#     - name: 📦 Install uv
+#       run: |
+#         irm https://astral.sh/uv/install.ps1 | iex
+#         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+#     - name: 🔧 Install dependencies
+#       run: |
+#         if [ ! -d ".venv" ]; then
+#           uv venv
+#         fi
+#         source .venv/bin/activate
+#         uv pip install -e .
+
+
+
+#     - name: 🤖 Run CrewAI
+#       env:
+#         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+#         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+#         NEWS_TOPIC: "latest AI developments"
+#       run: |
+#         set -e  # stop on first error
+#         echo "Start time: $(date)"
+#         ls -la
+#         ls -la .venv || echo "❌ No .venv found!"
+#         source .venv/bin/activate
+#         which python
+#         which crewai || echo "❌ CrewAI not installed!"
+#         mkdir -p output
+#         echo "Running CrewAI..."
+#         PYTHONUNBUFFERED=1 crewai run > output/news_report.md 2> output/logs.txt || echo "❌ crewai run failed!"
+#         echo "End time: $(date)"
+
+
+
+#     - name: 📤 Upload results
+#       uses: actions/upload-artifact@v4
+#       if: always()
+#       with:
+#         name: news-report-${{ github.run_number }}
+#         path: output/
+#         retention-days: 30
+
 name: CrewAI News Pipeline
 
 on:
@@ -9,15 +86,14 @@ on:
   schedule:
     - cron: '0 9 * * *'  # Daily at 9 AM UTC
 
-
 jobs:
   run-crew:
     runs-on: self-hosted
-    timeout-minutes: 45          # Virtual machine environment
-    
+    timeout-minutes: 45
+
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v4        # clone your repository’s code into the virtual machine that the workflow runs on.
+      uses: actions/checkout@v4
 
     - name: 🐍 Set up Python
       uses: actions/setup-python@v5
@@ -33,39 +109,50 @@ jobs:
           ${{ runner.os }}-uv-
 
     - name: 📦 Install uv
+      shell: powershell
       run: |
         irm https://astral.sh/uv/install.ps1 | iex
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        $env:Path += ";$HOME\.cargo\bin"
+        Write-Host "✅ uv installed successfully."
 
     - name: 🔧 Install dependencies
+      shell: powershell
       run: |
-        if [ ! -d ".venv" ]; then
+        if (-Not (Test-Path ".venv")) {
           uv venv
-        fi
-        source .venv/bin/activate
+        }
+        & .\.venv\Scripts\Activate.ps1
         uv pip install -e .
-
-
+        Write-Host "✅ Dependencies installed."
 
     - name: 🤖 Run CrewAI
+      shell: powershell
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
         NEWS_TOPIC: "latest AI developments"
       run: |
-        set -e  # stop on first error
-        echo "Start time: $(date)"
-        ls -la
-        ls -la .venv || echo "❌ No .venv found!"
-        source .venv/bin/activate
-        which python
-        which crewai || echo "❌ CrewAI not installed!"
-        mkdir -p output
-        echo "Running CrewAI..."
-        PYTHONUNBUFFERED=1 crewai run > output/news_report.md 2> output/logs.txt || echo "❌ crewai run failed!"
-        echo "End time: $(date)"
+        $ErrorActionPreference = "Stop"
+        Write-Host "🚀 Starting CrewAI pipeline..."
+        Write-Host "Start time: $(Get-Date)"
+        Get-ChildItem -Force
+        if (-Not (Test-Path ".venv")) { Write-Host "❌ No .venv found!" }
 
+        & .\.venv\Scripts\Activate.ps1
+        Get-Command python
+        if (-Not (Get-Command crewai -ErrorAction SilentlyContinue)) {
+          Write-Host "❌ CrewAI not found!"
+        }
 
+        New-Item -ItemType Directory -Force -Path output | Out-Null
+        Write-Host "Running CrewAI..."
+        try {
+          crewai run | Tee-Object -FilePath "output/news_report.md" 2> "output/logs.txt"
+        } catch {
+          Write-Host "❌ crewai run failed!"
+        }
+
+        Write-Host "End time: $(Get-Date)"
 
     - name: 📤 Upload results
       uses: actions/upload-artifact@v4
