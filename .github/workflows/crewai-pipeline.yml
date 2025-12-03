@@ -87,7 +87,7 @@ on:
 
 jobs:
   run-crew:
-    runs-on: self-hosted
+    runs-on: Ubuntu-latest
     timeout-minutes: 45
 
     steps:
