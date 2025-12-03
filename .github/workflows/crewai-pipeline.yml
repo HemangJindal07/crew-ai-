@@ -84,8 +84,6 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:    # Manual trigger via GitHub UI
-  schedule:
-    - cron: '0 9 * * *'  # Daily at 9 AM UTC
 
 jobs:
   run-crew:
